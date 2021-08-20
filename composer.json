@@ -16,7 +16,7 @@
         "test": "phpunit"
     },
     "require": {
-        "composer-plugin-api": "~1 || ~2"
+        "composer-plugin-api": "~2"
     },
     "require-dev": {
         "composer/composer": "^1.3",
