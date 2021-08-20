@@ -1,4 +1,7 @@
-# Composer installer plugin for packages with file replication
+# Composer installer plugin handling file replication
+
+![CI](https://github.com/eckinox/eckinox-installer-plugin/workflows/CI/badge.svg)
+
 A simple Composer plugin to install (meta)packages with extra files and configurations.
 
 ## Usage
