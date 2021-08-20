@@ -48,7 +48,7 @@ class CustomInstallerTest extends TestCase
 	public function tearDown(): void
 	{
 		$filesystem = new Filesystem();
-		$filesystem->removeDirectoryPhp($this->getMockInstallDir());
+		$filesystem->removeDirectoryPhp($this->getMockAuthorDir());
 		$filesystem->removeDirectoryPhp(__DIR__ . '/../dir');
 		$filesystem->remove(__DIR__ . '/../test.txt');
 		$filesystem->remove(__DIR__ . '/test.txt');
