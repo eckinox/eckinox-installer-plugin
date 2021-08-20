@@ -25,7 +25,7 @@ jobs:
           uses: php-actions/composer@v6
           with:
             php_version: ${{ matrix.php-versions }}
-        - name: Check file permissions
-          run: ls -lah
+        - name: Fix file permissions to make vendor writable
+          run: chown -R runner:docker .
         - name: PHPUnit test cases
           run: composer test
