@@ -25,5 +25,7 @@ jobs:
           uses: php-actions/composer@v6
           with:
             php_version: ${{ matrix.php-versions }}
+        - name: Check file permissions
+          run: ls -lah
         - name: PHPUnit test cases
           run: composer test
