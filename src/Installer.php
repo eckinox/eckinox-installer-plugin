@@ -2,9 +2,10 @@
 
 namespace Eckinox\Composer;
 
-use Composer\Package\PackageInterface;
 use Composer\Installer\LibraryInstaller;
+use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
+use React\Promise\PromiseInterface;
 
 class Installer extends LibraryInstaller
 {
@@ -19,9 +20,39 @@ class Installer extends LibraryInstaller
 
 	public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
 	{
-		parent::install($repo, $package);
-		
-		$this->copyPackageFiles($package);
+		$installer = $this;
+        $replicateFiles = function () use ($package, $installer) {
+            $installer->copyPackageFiles($package);
+        };
+
+        $promise = parent::install($repo, $package);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($replicateFiles);
+        }
+
+        // If not, execute the code right away as parent::install executed synchronously (composer v1, or v2 without async)
+        $replicateFiles();
+	}
+
+	public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
+	{
+		$installPath = $this->getPackageBasePath($package);
+        $io = $this->io;
+        $outputStatus = function () use ($io, $installPath) {
+            $io->write(sprintf('Deleting %s - %s', $installPath, !file_exists($installPath) ? '<comment>deleted</comment>' : '<error>not deleted</error>'));
+        };
+
+        $promise = parent::uninstall($repo, $package);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($outputStatus);
+        }
+
+        // If not, execute the code right away as parent::uninstall executed synchronously (composer v1, or v2 without async)
+        $outputStatus();
 	}
 
 	public function copyPackageFiles(PackageInterface $package)
