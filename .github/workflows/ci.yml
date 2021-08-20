@@ -26,6 +26,6 @@ jobs:
           with:
             php_version: ${{ matrix.php-versions }}
         - name: Fix file permissions to make vendor writable
-          run: chown -R runner:docker .
+          run: sudo chown -R runner:docker .
         - name: PHPUnit test cases
           run: composer test
