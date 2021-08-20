@@ -2,6 +2,7 @@
     "name": "eckinox/installer-plugin",
     "type": "composer-plugin",
     "license": "MIT",
+    "description": "A simple Composer plugin to install metapackages with extra files and configurations.",
     "autoload": {
         "psr-4": {
             "Eckinox\\Composer\\": "src/"
@@ -9,6 +10,9 @@
     },
     "extra": {
         "class": "Eckinox\\Composer\\Plugin"
+    },
+    "scripts": {
+        "test": "phpunit"
     },
     "require": {
         "composer-plugin-api": "~1 || ~2"
