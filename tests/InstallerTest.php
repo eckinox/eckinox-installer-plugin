@@ -94,7 +94,7 @@ class CustomInstallerTest extends TestCase
 		$updatedPackage->setExtra([
 			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
 		]);
-		$installer->removeDeletedReplications($package, $updatedPackage, true);
+		$installer->removeDeletedReplications($package, $updatedPackage);
 		$installer->copyPackageFiles($updatedPackage);
 		$this->assertFileDoesNotExist(__DIR__ . '/../test.txt', 'Removed files are removed on.');
 		$this->assertFileExists(__DIR__ . '/../test2.txt', 'Root-level files are replicated.');

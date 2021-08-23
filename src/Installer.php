@@ -113,7 +113,7 @@ class Installer extends LibraryInstaller
 	 * Removes files that were created in a previous version of the package but that isn't
 	 * present in the new version of the package.
 	 */
-	public function removeDeletedReplications(PackageInterface $oldPackage, PackageInterface $newPackage, bool $force = false)
+	public function removeDeletedReplications(PackageInterface $oldPackage, PackageInterface $newPackage)
 	{
 		$oldPackageDir = $this->getInstallPath($oldPackage);
 		$oldSourceDir = $oldPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
@@ -134,7 +134,7 @@ class Installer extends LibraryInstaller
 				$localFilename = $this->getLocalFilename($oldSourceDir, $filename);
 
 				if (file_exists($localFilename)) {
-					if ($force || $this->io->askConfirmation(sprintf("%s is no longer provided in %s. Would you like to delete it?", basename($localFilename), $newPackage->getName()))) {
+					if (md5_file($filename) == md5_file($localFilename)) {
 						unlink($localFilename);
 					}
 				}
