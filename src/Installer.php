@@ -188,6 +188,11 @@ class Installer extends LibraryInstaller
 				}
 			}
 		}
+
+		if (!class_exists($handlerClass)) {
+			$this->io->writeError(sprintf("Eckinox package handler $handlerClass could not be loaded. Proceeding with partial installation."));
+			return null;
+		}
 		
 		return new $handlerClass($package, $this->filesystem, $this->io);
 	}
