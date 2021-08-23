@@ -92,6 +92,12 @@ class Installer extends LibraryInstaller
 
 			if (!file_exists($localFilename) || !is_dir($localFilename)) {
 				$this->filesystem->copy($filename, $localFilename);
+				
+				if (!is_dir($filename)) {
+					// Fix permissions after copying
+					$permissions = substr(sprintf('%o', fileperms($filename)), -4);
+					chmod($localFilename,  $permissions);
+				}
 
 				if ($packageHandler !== null) {
 					$packageHandler->postFileCreationCallback($localFilename);
