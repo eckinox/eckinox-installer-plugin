@@ -36,6 +36,26 @@ class Installer extends LibraryInstaller
         $replicateFiles();
 	}
 
+	public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+	{
+		
+		$installer = $this;
+        $replicateFiles = function () use ($initial, $target, $installer) {
+			$installer->removeDeletedReplications($initial, $target);
+            $installer->copyPackageFiles($target);
+        };
+
+        $promise = parent::update($repo, $initial, $target);
+
+        // Composer v2 might return a promise here
+        if ($promise instanceof PromiseInterface) {
+            return $promise->then($replicateFiles);
+        }
+
+        // If not, execute the code right away as parent::install executed synchronously (composer v1, or v2 without async)
+        $replicateFiles();
+	}
+
 	public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
 	{
 		$installPath = $this->getPackageBasePath($package);
@@ -79,6 +99,39 @@ class Installer extends LibraryInstaller
 			} else if ($packageHandler !== null) {
 				if (file_exists($localFilename) && !is_dir($localFilename)) {
 					$packageHandler->handleExistingFile($filename, $localFilename);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Removes files that were created in a previous version of the package but that isn't
+	 * present in the new version of the package.
+	 */
+	public function removeDeletedReplications(PackageInterface $oldPackage, PackageInterface $newPackage, bool $force = false)
+	{
+		$oldPackageDir = $this->getInstallPath($oldPackage);
+		$oldSourceDir = $oldPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
+		$newPackageDir = $this->getInstallPath($newPackage);
+		$newSourceDir = $newPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
+		
+		if (!is_dir($oldSourceDir) || !is_dir($newSourceDir)) {
+			return;
+		}
+		
+		$oldFiles = $this->getDirContents($oldSourceDir);
+		$newFiles = $this->getDirContents($newSourceDir);
+
+		foreach ($oldFiles as $filename) {
+			$newFilename = str_replace($oldSourceDir, $newSourceDir, $filename);
+
+			if (!in_array($newFilename, $newFiles)) {
+				$localFilename = $this->getLocalFilename($oldSourceDir, $filename);
+
+				if (file_exists($localFilename)) {
+					if ($force || $this->io->askConfirmation(sprintf("%s is no longer provided in %s. Would you like to delete it?", basename($localFilename), $newPackage->getName()))) {
+						unlink($localFilename);
+					}
 				}
 			}
 		}

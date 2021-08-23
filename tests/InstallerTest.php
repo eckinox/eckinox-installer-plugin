@@ -34,17 +34,12 @@ class CustomInstallerTest extends TestCase
 		return $this->getVendorDir() . '/eckinox-mock';
 	}
 
-	private function getMockInstallDir(): string
-	{
-		return $this->getMockAuthorDir() . '/mock-package';
-	}
-
 	public function setUp(): void
 	{
 		$mockPackageDir = __DIR__ . '/../tests/mock-package';
 		$filesystem = new Filesystem();
 		$filesystem->ensureDirectoryExists($this->getMockAuthorDir());
-		$filesystem->copy($mockPackageDir, $this->getMockInstallDir());
+		$filesystem->copy($mockPackageDir, $this->getMockAuthorDir() . '/mock-package');
 	}
 
 	public function tearDown(): void
@@ -53,6 +48,7 @@ class CustomInstallerTest extends TestCase
 		$filesystem->removeDirectoryPhp($this->getMockAuthorDir());
 		$filesystem->removeDirectoryPhp(__DIR__ . '/../dir');
 		$filesystem->remove(__DIR__ . '/../test.txt');
+		$filesystem->remove(__DIR__ . '/../test2.txt');
 		$filesystem->remove(__DIR__ . '/../renamed.txt');
 		$filesystem->remove(__DIR__ . '/test.txt');
 	}
@@ -72,9 +68,11 @@ class CustomInstallerTest extends TestCase
     /**
      * Tests installation path for given package/spec combination.
      */
-    public function testFileReplicationPath()
+    public function testFileReplication()
     {
 		$installer = $this->getInstaller();
+
+		// Package installation
         $package = new Package('eckinox-mock/mock-package', '1.0.0', '1.0.0');
 		$package->setExtra([
 			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
@@ -82,6 +80,24 @@ class CustomInstallerTest extends TestCase
 		$installer->copyPackageFiles($package);
 
 		$this->assertFileExists(__DIR__ . '/../test.txt', 'Root-level files are replicated.');
+		$this->assertDirectoryExists(__DIR__ . '/../dir', 'New directories are replicated.');
+		$this->assertFileExists(__DIR__ . '/../dir/test.txt', 'Nested files are replicated.');
+		$this->assertFileExists(__DIR__ . '/test.txt', 'Nested files in existing directories are replicated.');
+		$this->assertFileExists(__DIR__ . '/../renamed.txt', 'Handler is loaded and executed.');
+
+		// Package update
+		$mockPackageDir = __DIR__ . '/../tests/mock-package-v2';
+		$filesystem = new Filesystem();
+		$filesystem->ensureDirectoryExists($this->getMockAuthorDir());
+		$filesystem->copy($mockPackageDir, $this->getMockAuthorDir() . '/mock-package-v2');
+        $updatedPackage = new Package('eckinox-mock/mock-package-v2', '2.0.0', '2.0.0');
+		$updatedPackage->setExtra([
+			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
+		]);
+		$installer->removeDeletedReplications($package, $updatedPackage, true);
+		$installer->copyPackageFiles($updatedPackage);
+		$this->assertFileDoesNotExist(__DIR__ . '/../test.txt', 'Removed files are removed on.');
+		$this->assertFileExists(__DIR__ . '/../test2.txt', 'Root-level files are replicated.');
 		$this->assertDirectoryExists(__DIR__ . '/../dir', 'New directories are replicated.');
 		$this->assertFileExists(__DIR__ . '/../dir/test.txt', 'Nested files are replicated.');
 		$this->assertFileExists(__DIR__ . '/test.txt', 'Nested files in existing directories are replicated.');
