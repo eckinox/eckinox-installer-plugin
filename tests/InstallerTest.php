@@ -10,6 +10,8 @@ use Composer\Util\Filesystem;
 use Eckinox\Composer\Installer;
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . "/mock-package/src/ReplicationHandler.php";
+
 class CustomInstallerTest extends TestCase
 {
 	private function getVendorDir()
@@ -51,6 +53,7 @@ class CustomInstallerTest extends TestCase
 		$filesystem->removeDirectoryPhp($this->getMockAuthorDir());
 		$filesystem->removeDirectoryPhp(__DIR__ . '/../dir');
 		$filesystem->remove(__DIR__ . '/../test.txt');
+		$filesystem->remove(__DIR__ . '/../renamed.txt');
 		$filesystem->remove(__DIR__ . '/test.txt');
 	}
 
@@ -73,11 +76,15 @@ class CustomInstallerTest extends TestCase
     {
 		$installer = $this->getInstaller();
         $package = new Package('eckinox-mock/mock-package', '1.0.0', '1.0.0');
+		$package->setExtra([
+			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
+		]);
 		$installer->copyPackageFiles($package);
 
 		$this->assertFileExists(__DIR__ . '/../test.txt', 'Root-level files are replicated.');
 		$this->assertDirectoryExists(__DIR__ . '/../dir', 'New directories are replicated.');
 		$this->assertFileExists(__DIR__ . '/../dir/test.txt', 'Nested files are replicated.');
 		$this->assertFileExists(__DIR__ . '/test.txt', 'Nested files in existing directories are replicated.');
+		$this->assertFileExists(__DIR__ . '/../renamed.txt', 'Handler is loaded and executed.');
     }
 }
