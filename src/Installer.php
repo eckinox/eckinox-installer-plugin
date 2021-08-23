@@ -59,11 +59,12 @@ class Installer extends LibraryInstaller
 	{
 		$packageDir = $this->getInstallPath($package);
 		$sourceDir = $packageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
-
+		
 		if (!is_dir($sourceDir)) {
 			return;
 		}
-
+		
+		$packageHandler = $this->getPackageHandler($package);
 		$filesToReplicate = $this->getDirContents($sourceDir);
 
 		foreach ($filesToReplicate as $filename) {
@@ -71,6 +72,14 @@ class Installer extends LibraryInstaller
 
 			if (!file_exists($localFilename) || !is_dir($localFilename)) {
 				$this->filesystem->copy($filename, $localFilename);
+
+				if ($packageHandler !== null) {
+					$packageHandler->postFileCreationCallback($localFilename);
+				}
+			} else if ($packageHandler !== null) {
+				if (file_exists($localFilename) && !is_dir($localFilename)) {
+					$packageHandler->handleExistingFile($filename, $localFilename);
+				}
 			}
 		}
 	}
@@ -97,5 +106,18 @@ class Installer extends LibraryInstaller
 		}
 	
 		return $results;
+	}
+
+	protected function getPackageHandler(PackageInterface $package): ?HandlerInterface
+	{
+		$extra = $package->getExtra();
+		
+		if (!isset($extra['class'])) {
+			return null;
+		}
+
+		$handlerClass = $extra['class'];
+		
+		return new $handlerClass($package, $this->filesystem, $this->io);
 	}
 }
