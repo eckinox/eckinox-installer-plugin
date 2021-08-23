@@ -170,6 +170,24 @@ class Installer extends LibraryInstaller
 		}
 
 		$handlerClass = $extra['class'];
+
+		if (!class_exists($handlerClass)) {
+			$autoload = $package->getAutoload();
+			$packageDir = $this->getInstallPath($package);
+
+			if (isset($autoload['psr-4'])) {
+				foreach ($autoload['psr-4'] as $classPart => $startDir) {
+					$classTrailingPart = str_replace($classPart, "", $handlerClass);
+					$classPath = $packageDir . '/' . $startDir . $classTrailingPart . '.php';
+					
+					if (file_exists($classPath)) {
+						require_once($classPath);
+					}
+					
+					break;
+				}
+			}
+		}
 		
 		return new $handlerClass($package, $this->filesystem, $this->io);
 	}
