@@ -26,11 +26,11 @@ If you need to add extra logic and processing during the replication process, yo
 
 Handler classes extend the `Eckinox\Composer\HandlerInterface`, and must be declared in the package's `composer.json` file as such:
 ```json
-	...
+    ...
     "extra": {
         "class": "Eckinox\\PackageName\\YourHandler"
     },
-	...
+    ...
 ```
 
 Your handler class must define the following methods:
