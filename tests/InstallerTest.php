@@ -22,10 +22,10 @@ class CustomInstallerTest extends TestCase
 			return $dir;
 		}
 
-        $composer = new Composer();
-        $config = new Config(false, realpath('.'));
-        $composer->setConfig($config);
-		
+		$composer = new Composer();
+		$config = new Config(false, realpath('.'));
+		$composer->setConfig($config);
+
 		return $dir = rtrim($composer->getConfig()->get('vendor-dir'), '/');
 	}
 
@@ -55,25 +55,25 @@ class CustomInstallerTest extends TestCase
 
 	private function getInstaller(): Installer
 	{
-        $composer = new Composer();
-        $config = new Config(false, realpath('.'));
-        $composer->setConfig($config);
-		
-		/** @var \Composer\IO\IOInterface */
-        $io = $this->createMock('Composer\IO\IOInterface');
+		$composer = new Composer();
+		$config = new Config(false, realpath('.'));
+		$composer->setConfig($config);
 
-        return new Installer($io, $composer);
+		/** @var \Composer\IO\IOInterface */
+		$io = $this->createMock('Composer\IO\IOInterface');
+
+		return new Installer($io, $composer);
 	}
 
-    /**
-     * Tests installation path for given package/spec combination.
-     */
-    public function testFileReplication()
-    {
+	/**
+	 * Tests installation path for given package/spec combination.
+	 */
+	public function testFileReplication()
+	{
 		$installer = $this->getInstaller();
 
 		// Package installation
-        $package = new Package('eckinox-mock/mock-package', '1.0.0', '1.0.0');
+		$package = new Package('eckinox-mock/mock-package', '1.0.0', '1.0.0');
 		$package->setExtra([
 			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
 		]);
@@ -90,7 +90,7 @@ class CustomInstallerTest extends TestCase
 		$filesystem = new Filesystem();
 		$filesystem->ensureDirectoryExists($this->getMockAuthorDir());
 		$filesystem->copy($mockPackageDir, $this->getMockAuthorDir() . '/mock-package-v2');
-        $updatedPackage = new Package('eckinox-mock/mock-package-v2', '2.0.0', '2.0.0');
+		$updatedPackage = new Package('eckinox-mock/mock-package-v2', '2.0.0', '2.0.0');
 		$updatedPackage->setExtra([
 			"class" => "Eckinox\\Composer\\Tests\\MockPackage\\ReplicationHandler"
 		]);
@@ -102,5 +102,5 @@ class CustomInstallerTest extends TestCase
 		$this->assertFileExists(__DIR__ . '/../dir/test.txt', 'Nested files are replicated.');
 		$this->assertFileExists(__DIR__ . '/test.txt', 'Nested files in existing directories are replicated.');
 		$this->assertFileExists(__DIR__ . '/../renamed.txt', 'Handler is loaded and executed.');
-    }
+	}
 }

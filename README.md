@@ -50,30 +50,24 @@ use Eckinox\Composer\HandlerInterface;
 
 class ReplicationHandler implements HandlerInterface
 {
+    public function __construct(
+        private PackageInterface $package, 
+        private Filesystem $filesystem, 
+        private IOInterface $io)
+    {
+    }
 
-	protected $package;
-	protected $filesystem;
-	protected $io;
+    public function handleExistingFile(string $packageFilename, string $projectFilename)
+    {
+    }
 
-	public function __construct(PackageInterface $package, Filesystem $filesystem, IOInterface $io)
-	{
-		$this->package = $package;
-		$this->filesystem = $filesystem;
-		$this->io = $io;
-	}
-
-	public function handleExistingFile(string $packageFilename, string $projectFilename)
-	{
-		
-	}
-
-	public function postFileCreationCallback(string $projectFilename)
-	{
-		if (basename($projectFilename) == "rename-me.txt") {
-			$newFilename = substr($projectFilename, 0, strlen($projectFilename) - 13) . "renamed.txt";
-			rename($projectFilename, $newFilename);
-		}
-	}
+    public function postFileCreationCallback(string $projectFilename)
+    {
+        if (basename($projectFilename) == "rename-me.txt") {
+            $newFilename = substr($projectFilename, 0, strlen($projectFilename) - 13) . "renamed.txt";
+            rename($projectFilename, $newFilename);
+        }
+    }
 }
 ```
 
