@@ -57,7 +57,7 @@ class ReplicationHandler implements HandlerInterface
     {
     }
 
-    public function handleExistingFile(string $packageFilename, string $projectFilename)
+    public function handleExistingFile(string $packageFilename, string $projectFilename, ?string $currentlyInstalledFilename = null)
     {
     }
 

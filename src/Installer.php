@@ -22,7 +22,7 @@ class Installer extends LibraryInstaller
 	{
 		$installer = $this;
 		$replicateFiles = function () use ($package, $installer) {
-			$installer->copyPackageFiles($package);
+			$installer->copyPackageFiles(null, $package);
 		};
 
 		$promise = parent::install($repo, $package);
@@ -42,7 +42,7 @@ class Installer extends LibraryInstaller
 		$installer = $this;
 		$replicateFiles = function () use ($initial, $target, $installer) {
 			$installer->removeDeletedReplications($initial, $target);
-			$installer->copyPackageFiles($target);
+			$installer->copyPackageFiles($initial, $target);
 		};
 
 		$promise = parent::update($repo, $initial, $target);
@@ -75,20 +75,36 @@ class Installer extends LibraryInstaller
 		$outputStatus();
 	}
 
-	public function copyPackageFiles(PackageInterface $package)
+	public function copyPackageFiles(?PackageInterface $currentlyInstalledPackage, PackageInterface $newPackage)
 	{
-		$packageDir = $this->getInstallPath($package);
-		$sourceDir = $packageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
+		$newPackageDir = $this->getInstallPath($newPackage);
+		$newSourceDir = $newPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
+		$installedPackageDir = null;
+		$installedSourceDir = null;
 
-		if (!is_dir($sourceDir)) {
+		if ($currentlyInstalledPackage) {
+			$installedPackageDir = $currentlyInstalledPackage ? $this->getInstallPath($currentlyInstalledPackage) : null;
+			$installedSourceDir = $installedPackageDir ? ($installedPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR) : null;
+		}
+
+		if (!is_dir($newSourceDir)) {
 			return;
 		}
 
-		$packageHandler = $this->getPackageHandler($package);
-		$filesToReplicate = $this->getDirContents($sourceDir);
+		$packageHandler = $this->getPackageHandler($newPackage);
+		$filesToReplicate = $this->getDirContents($newSourceDir);
 
 		foreach ($filesToReplicate as $filename) {
-			$localFilename = $this->getLocalFilename($sourceDir, $filename);
+			$localFilename = $this->getLocalFilename($newSourceDir, $filename);
+			$installedFilename = null;
+
+			if ($installedSourceDir) {
+				$installedFilename = $this->getLocalFilename($installedSourceDir, $filename);
+
+				if (!is_file($installedFilename)) {
+					$installedFilename = null;
+				}
+			}
 
 			if (!file_exists($localFilename) || !is_dir($localFilename)) {
 				$this->filesystem->copy($filename, $localFilename);
@@ -103,7 +119,7 @@ class Installer extends LibraryInstaller
 				}
 			} else if ($packageHandler !== null) {
 				if (file_exists($localFilename) && !is_dir($localFilename)) {
-					$packageHandler->handleExistingFile($filename, $localFilename);
+					$packageHandler->handleExistingFile($filename, $localFilename, $installedFilename);
 				}
 			}
 		}

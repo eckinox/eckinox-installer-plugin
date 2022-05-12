@@ -21,9 +21,9 @@ class ReplicationHandler implements HandlerInterface
 		$this->io = $io;
 	}
 
-	public function handleExistingFile(string $packageFilename, string $projectFilename)
+	public function handleExistingFile(string $packageFilename, string $projectFilename, ?string $currentlyInstalledFilename = null)
 	{
-		
+
 	}
 
 	public function postFileCreationCallback(string $projectFilename)
