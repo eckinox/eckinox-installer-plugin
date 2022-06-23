@@ -106,7 +106,7 @@ class Installer extends LibraryInstaller
 				}
 			}
 
-			if (!file_exists($localFilename) || !is_dir($localFilename)) {
+			if (!file_exists($localFilename)) {
 				$this->filesystem->copy($filename, $localFilename);
 
 				if (!is_dir($filename) && is_executable($filename)) {
