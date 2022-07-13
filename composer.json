@@ -1,6 +1,6 @@
 {
     "name": "eckinox/installer-plugin",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "type": "composer-plugin",
     "license": "MIT",
     "description": "A simple Composer plugin to install metapackages with extra files and configurations.",
