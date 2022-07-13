@@ -10,6 +10,17 @@ use React\Promise\PromiseInterface;
 class Installer extends LibraryInstaller
 {
 	private const FILES_DIRECTORY = 'replicate';
+
+	/**
+	 * @var string|null
+	 */
+	private $preUpdateFilesDir = null;
+
+	/**
+	 * @var array<string,string>
+	 */
+	private $preUpdateFiles = [];
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -17,6 +28,41 @@ class Installer extends LibraryInstaller
 	{
 		return 'eckinox-metapackage' === $packageType;
 	}
+
+	public function download(PackageInterface $package, PackageInterface $prevPackage = null)
+	{
+		// @TODO: Find filenames of all "TO REPLICATE" files
+		// @TODO: Create copies of all existing "TO REPLICATE" files in the vendor package
+		// @TODO: Communicate temporary "pre-update" files location to the replication handler
+
+		$packageDir = $this->getInstallPath($package);
+
+		if ($packageDir && file_exists($packageDir)) {
+			$this->preUpdateFilesDir = $this->createTempDir();
+
+			$packageReplicateDir = $packageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
+			$preUpdateFiles = $this->getDirContents($packageReplicateDir);
+
+			foreach ($preUpdateFiles as $filename) {
+				$temporaryFilename = str_replace($packageReplicateDir, rtrim($this->preUpdateFilesDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $filename);
+				$this->filesystem->copy($filename, $temporaryFilename);
+
+				$relativeFilename = str_replace($packageReplicateDir, "", $filename);
+				$this->preUpdateFiles[$relativeFilename] = $temporaryFilename;
+			}
+		}
+
+		parent::download($package, $prevPackage);
+	}
+
+	public function cleanup($type, PackageInterface $package, PackageInterface $prevPackage = null)
+    {
+		if ($this->preUpdateFilesDir && file_exists($this->preUpdateFilesDir)) {
+			$this->filesystem->removeDirectory($this->preUpdateFilesDir);
+		}
+
+        parent::cleanup($type, $package, $prevPackage);
+    }
 
 	public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
 	{
@@ -79,13 +125,6 @@ class Installer extends LibraryInstaller
 	{
 		$newPackageDir = $this->getInstallPath($newPackage);
 		$newSourceDir = $newPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR;
-		$installedPackageDir = null;
-		$installedSourceDir = null;
-
-		if ($currentlyInstalledPackage) {
-			$installedPackageDir = $currentlyInstalledPackage ? $this->getInstallPath($currentlyInstalledPackage) : null;
-			$installedSourceDir = $installedPackageDir ? ($installedPackageDir . DIRECTORY_SEPARATOR . self::FILES_DIRECTORY . DIRECTORY_SEPARATOR) : null;
-		}
 
 		if (!is_dir($newSourceDir)) {
 			return;
@@ -96,15 +135,6 @@ class Installer extends LibraryInstaller
 
 		foreach ($filesToReplicate as $filename) {
 			$localFilename = $this->getLocalFilename($newSourceDir, $filename);
-			$installedFilename = null;
-
-			if ($installedSourceDir) {
-				$installedFilename = $this->getLocalFilename($installedSourceDir, $filename);
-
-				if (!is_file($installedFilename)) {
-					$installedFilename = null;
-				}
-			}
 
 			if (!file_exists($localFilename)) {
 				$this->filesystem->copy($filename, $localFilename);
@@ -119,7 +149,8 @@ class Installer extends LibraryInstaller
 				}
 			} else if ($packageHandler !== null) {
 				if (file_exists($localFilename) && !is_dir($localFilename)) {
-					$packageHandler->handleExistingFile($filename, $localFilename, $installedFilename);
+					$relativeFilename = str_replace($newSourceDir, "", $filename);
+					$packageHandler->handleExistingFile($filename, $localFilename, $this->preUpdateFiles[$relativeFilename] ?? null);
 				}
 			}
 		}
@@ -216,5 +247,18 @@ class Installer extends LibraryInstaller
 		}
 
 		return new $handlerClass($package, $this->filesystem, $this->io);
+	}
+
+	private function createTempDir()
+	{
+		$dirPath = tempnam(sys_get_temp_dir(), 'eckinox_installer_');
+
+		if (file_exists($dirPath)) {
+			unlink($dirPath);
+		}
+
+		mkdir($dirPath);
+
+		return $dirPath;
 	}
 }
